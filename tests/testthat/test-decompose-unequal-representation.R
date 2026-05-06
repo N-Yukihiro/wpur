@@ -15,6 +15,23 @@ fixture_identity_positive_cells <- tibble::tribble(
     "D2", "B", 60, 1
 )
 
+fixture_candidate_level_input <- tibble::tribble(
+    ~district, ~party, ~votes, ~elected,
+    "D1", "A", 60, 1,
+    "D1", "A", 60, 1,
+    "D1", "B", 40, 0,
+    "D2", "A", 40, 0,
+    "D2", "B", 60, 1
+)
+
+fixture_party_level_input <- tibble::tribble(
+    ~district, ~party, ~votes, ~elected,
+    "D1", "A", 120, 2,
+    "D1", "B", 40, 0,
+    "D2", "A", 40, 0,
+    "D2", "B", 60, 1
+)
+
 fixture_party_vs_independent <- tibble::tribble(
     ~district, ~party, ~votes, ~elected,
     "D1", "P1", 35, 1,
@@ -93,6 +110,17 @@ testthat::test_that("base output columns exist in none mode", {
     testthat::expect_equal(res$group_decomposition, "none")
     testthat::expect_false("between_group_disproportionality" %in% names(res))
     testthat::expect_false("weighted_within_group_disproportionality" %in% names(res))
+})
+
+testthat::test_that("party-level input can be used directly", {
+    candidate_res <- call_decompose(fixture_candidate_level_input, alpha = 2)
+    party_res <- call_decompose(fixture_party_level_input, alpha = 2)
+
+    testthat::expect_equal(
+        party_res,
+        candidate_res,
+        tolerance = 1e-12
+    )
 })
 
 testthat::test_that("group decomposition columns exist when grouping is requested", {
