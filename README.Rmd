@@ -1,0 +1,58 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
+
+# wpur
+
+<!-- badges: start -->
+[![R-CMD-check](https://github.com/N-Yukihiro/wpur/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/N-Yukihiro/wpur/actions/workflows/R-CMD-check.yaml)
+[![Codecov test coverage](https://codecov.io/gh/N-Yukihiro/wpur/graph/badge.svg)](https://app.codecov.io/gh/N-Yukihiro/wpur)
+<!-- badges: end -->
+
+`wpur` implements the unified alpha-divergence framework proposed by Wada and Kamahara (2024) for measuring whole picture of unequal representation.
+
+## Installation
+
+You can install the development version of wpur from [GitHub](https://github.com/) with:
+
+``` r
+# install.packages("pacman")
+# pacman::p_load_gh("N-Yukihiro/wpur")
+```
+
+## Example
+
+```{r setup}
+library(wpur)
+```
+
+```{r example}
+election <- tibble::tribble(
+  ~district, ~party, ~votes, ~elected,
+  "D1", "Party A", 60, 1,
+  "D1", "Party B", 40, 1,
+  "D2", "Party A", 40, 1,
+  "D2", "Party B", 60, 1
+)
+
+decompose_unequal_representation(
+  data = election,
+  party_var = party,
+  district_var = district,
+  votes_var = votes,
+  elected_var = elected,
+  alpha = 2,
+  election_info = TRUE
+)
+```
