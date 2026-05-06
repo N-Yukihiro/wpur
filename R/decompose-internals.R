@@ -165,7 +165,7 @@ summarise_group_results <- function(analysis_data,
                 group_label = dplyr::if_else(
                     stringr::str_detect(
                         string = as.character(.data$party),
-                        pattern = paste0("^", independent_label, "\\d*$")
+                        pattern = paste0("^", stringr::str_escape(independent_label), "\\d*$")
                     ),
                     "independent",
                     "party"
