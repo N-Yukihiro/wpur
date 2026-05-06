@@ -1,7 +1,11 @@
 Package: wpur
 Type: Package
-Title: What the Package Does (Title Case)
-Version: 0.0.0.9000
+Title: Measure and Decompose the Whole Picture of Unequal Representation
+Version: 0.1.0
+Depends:
+    R (>= 4.1.0)
+URL: https://github.com/N-Yukihiro/wpur
+BugReports: https://github.com/N-Yukihiro/wpur/issues
 Authors@R: c(
     person(
       "NAKAJIMA", "Yukihiro",
@@ -9,9 +13,23 @@ Authors@R: c(
       role = c("aut", "cre")
     )
   )
-Description: More about what it does (maybe more than one line).
-    Continuation lines should be indented.
-License: What license is it under?
+Description: Provides tools to implement the unified approach proposed by
+    Wada and Kamahara (2024) <doi:10.1007/s11127-024-01159-z> for measuring
+    unequal representation. It decomposes the whole picture of unequal
+    representation into four components using alpha-divergence:
+    disproportionality, malapportionment, wasted votes, and intra-party
+    unequal representation.
+License: MIT + file LICENSE
 Encoding: UTF-8
-LazyData: true
-Config/roxygen2/version: 8.0.0
+Imports:
+    dplyr,
+    rlang,
+    stringr,
+    tibble,
+    tidyr
+RoxygenNote: 8.0.0
+Roxygen: list(markdown = TRUE)
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
+Language: en-US
