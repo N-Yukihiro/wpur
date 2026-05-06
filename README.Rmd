@@ -26,9 +26,9 @@ knitr::opts_chunk$set(
 
 You can install the development version of wpur from [GitHub](https://github.com/) with:
 
-``` r
+``` {r install, eval = FALSE}
 # install.packages("pacman")
-# pacman::p_load_gh("N-Yukihiro/wpur")
+pacman::p_load_gh("N-Yukihiro/wpur")
 ```
 
 ## Example
