@@ -12,7 +12,7 @@ You can install the development version of wpur from
 ``` r
 
 # install.packages("pacman")
-# pacman::p_load_gh("N-Yukihiro/wpur")
+pacman::p_load_gh("N-Yukihiro/wpur")
 ```
 
 ## Example
