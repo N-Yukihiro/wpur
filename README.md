@@ -5,6 +5,9 @@
 
 <!-- badges: start -->
 
+[![R-CMD-check](https://github.com/N-Yukihiro/wpur/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/N-Yukihiro/wpur/actions/workflows/R-CMD-check.yaml)
+[![Codecov test
+coverage](https://codecov.io/gh/N-Yukihiro/wpur/graph/badge.svg)](https://app.codecov.io/gh/N-Yukihiro/wpur)
 <!-- badges: end -->
 
 `wpur` implements the unified alpha-divergence framework proposed by
