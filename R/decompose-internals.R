@@ -213,7 +213,7 @@ summarise_group_results <- function(analysis_data,
                 group_label = dplyr::if_else(
                     .data$total_candidate_count > 1,
                     "multicandidate",
-                    "other"
+                    "singlecandidate"
                 )
             )
     }
@@ -232,7 +232,7 @@ summarise_group_results <- function(analysis_data,
             alpha = alpha,
             prefix = "group",
             divergence_name = "within_group_disproportionality",
-            contribution_name = "weighted_within_group_disproportionality_contribution"
+            contribution_name = "weighted_within_category_disproportionality_contribution"
         ) |>
         dplyr::arrange(.data$group_label)
 
@@ -286,15 +286,15 @@ append_election_info <- function(result,
             )
     }
 
-    if (group_decomposition == "multicandidate_vs_others" && !is.null(party_group_lookup)) {
+    if (group_decomposition == "multicandidate_vs_singlecandidate" && !is.null(party_group_lookup)) {
         result <- result |>
             dplyr::mutate(
                 multicandidate_party_count = sum(
                     party_group_lookup$group_label == "multicandidate",
                     na.rm = TRUE
                 ),
-                other_count = sum(
-                    party_group_lookup$group_label == "other",
+                singlecandidate_party_count = sum(
+                    party_group_lookup$group_label == "singlecandidate",
                     na.rm = TRUE
                 ),
                 .after = party_count

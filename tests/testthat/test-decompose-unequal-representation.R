@@ -109,7 +109,7 @@ testthat::test_that("base output columns exist in none mode", {
 
     testthat::expect_equal(res$group_decomposition, "none")
     testthat::expect_false("between_group_disproportionality" %in% names(res))
-    testthat::expect_false("weighted_within_group_disproportionality" %in% names(res))
+    testthat::expect_false("weighted_within_category_disproportionality" %in% names(res))
 })
 
 testthat::test_that("party-level input can be used directly", {
@@ -132,15 +132,16 @@ testthat::test_that("group decomposition columns exist when grouping is requeste
     res_multicandidate <- call_decompose(
         fixture_multicandidate_bug_detector,
         alpha = 2,
-        group_decomposition = "multicandidate_vs_others"
+        group_decomposition = "multicandidate_vs_singlecandidate"
     )
 
     testthat::expect_true(all(c(
         "between_group_disproportionality",
-        "weighted_within_group_disproportionality",
+        "weighted_within_category_disproportionality",
         "disproportionality_within_independent",
         "disproportionality_within_party"
     ) %in% names(res_party_independent)))
+    testthat::expect_false("weighted_within_group_disproportionality" %in% names(res_party_independent))
     testthat::expect_equal(
         res_party_independent$group_decomposition,
         "party_vs_independent"
@@ -148,13 +149,15 @@ testthat::test_that("group decomposition columns exist when grouping is requeste
 
     testthat::expect_true(all(c(
         "between_group_disproportionality",
-        "weighted_within_group_disproportionality",
+        "weighted_within_category_disproportionality",
         "disproportionality_within_multicandidate",
-        "disproportionality_within_other"
+        "disproportionality_within_singlecandidate"
     ) %in% names(res_multicandidate)))
+    testthat::expect_false("weighted_within_group_disproportionality" %in% names(res_multicandidate))
+    testthat::expect_false("disproportionality_within_other" %in% names(res_multicandidate))
     testthat::expect_equal(
         res_multicandidate$group_decomposition,
-        "multicandidate_vs_others"
+        "multicandidate_vs_singlecandidate"
     )
 })
 
@@ -167,7 +170,7 @@ testthat::test_that("group decomposition dynamic columns have stable order", {
     res_multicandidate <- call_decompose(
         fixture_multicandidate_bug_detector,
         alpha = 2,
-        group_decomposition = "multicandidate_vs_others"
+        group_decomposition = "multicandidate_vs_singlecandidate"
     )
 
     testthat::expect_lt(
@@ -176,7 +179,7 @@ testthat::test_that("group decomposition dynamic columns have stable order", {
     )
     testthat::expect_lt(
         match("disproportionality_within_multicandidate", names(res_multicandidate)),
-        match("disproportionality_within_other", names(res_multicandidate))
+        match("disproportionality_within_singlecandidate", names(res_multicandidate))
     )
 })
 
@@ -222,22 +225,22 @@ testthat::test_that("grouped identity holds for party_vs_independent", {
     testthat::expect_equal(
         res$disproportionality,
         res$between_group_disproportionality +
-            res$weighted_within_group_disproportionality,
+            res$weighted_within_category_disproportionality,
         tolerance = 1e-10
     )
 })
 
-testthat::test_that("grouped identity holds for multicandidate_vs_others", {
+testthat::test_that("grouped identity holds for multicandidate_vs_singlecandidate", {
     res <- call_decompose(
         fixture_multicandidate_bug_detector,
         alpha = 2,
-        group_decomposition = "multicandidate_vs_others"
+        group_decomposition = "multicandidate_vs_singlecandidate"
     )
 
     testthat::expect_equal(
         res$disproportionality,
         res$between_group_disproportionality +
-            res$weighted_within_group_disproportionality,
+            res$weighted_within_category_disproportionality,
         tolerance = 1e-10
     )
 })
@@ -246,11 +249,11 @@ testthat::test_that("single aggregated party with multiple candidates is classif
     res <- call_decompose(
         fixture_multicandidate_bug_detector,
         alpha = 2,
-        group_decomposition = "multicandidate_vs_others"
+        group_decomposition = "multicandidate_vs_singlecandidate"
     )
 
     testthat::expect_equal(
-        res$weighted_within_group_disproportionality,
+        res$weighted_within_category_disproportionality,
         0,
         tolerance = 1e-12
     )
@@ -338,18 +341,19 @@ testthat::test_that("election_info adds party-vs-independent group counts", {
     )
 })
 
-testthat::test_that("election_info adds multicandidate-vs-others group counts", {
+testthat::test_that("election_info adds multicandidate-vs-singlecandidate group counts", {
     res <- call_decompose(
         fixture_multicandidate_bug_detector,
         alpha = 2,
-        group_decomposition = "multicandidate_vs_others",
+        group_decomposition = "multicandidate_vs_singlecandidate",
         election_info = TRUE
     )
 
     testthat::expect_equal(res$multicandidate_party_count, 1)
-    testthat::expect_equal(res$other_count, 1)
+    testthat::expect_equal(res$singlecandidate_party_count, 1)
+    testthat::expect_false("other_count" %in% names(res))
     testthat::expect_equal(
-        res$multicandidate_party_count + res$other_count,
+        res$multicandidate_party_count + res$singlecandidate_party_count,
         res$party_count
     )
 })
@@ -365,6 +369,17 @@ testthat::test_that("all no-contest districts raise an error", {
     testthat::expect_error(
         call_decompose(fixture_all_no_contest, alpha = 2),
         "No contested districts remain"
+    )
+})
+
+testthat::test_that("legacy multicandidate_vs_others mode is rejected", {
+    testthat::expect_error(
+        call_decompose(
+            fixture_multicandidate_bug_detector,
+            alpha = 2,
+            group_decomposition = "multicandidate_vs_others"
+        ),
+        "`group_decomposition` must be one of"
     )
 })
 

@@ -16,7 +16,7 @@
 #' `alpha = 0` and `alpha = 1` use their limiting forms.
 #' @param group_decomposition Character string selecting optional decomposition
 #'   of party-level disproportionality. One of `"none"`,
-#'   `"party_vs_independent"`, or `"multicandidate_vs_others"`.
+#'   `"party_vs_independent"`, or `"multicandidate_vs_singlecandidate"`.
 #' @param independent_label Character scalar used to identify independents in `party_var`.
 #'   When `group_decomposition = "party_vs_independent"`,
 #'   matching candidates are renumbered internally so
@@ -66,7 +66,7 @@ decompose_unequal_representation <- function(data,
         values = c(
             "none",
             "party_vs_independent",
-            "multicandidate_vs_others"
+            "multicandidate_vs_singlecandidate"
         )
     )
 
@@ -166,8 +166,8 @@ decompose_unequal_representation <- function(data,
                     vote_share = group_summary$group_vote_share,
                     alpha = alpha
                 ),
-                weighted_within_group_disproportionality = sum(
-                    group_summary$weighted_within_group_disproportionality_contribution,
+                weighted_within_category_disproportionality = sum(
+                    group_summary$weighted_within_category_disproportionality_contribution,
                     na.rm = TRUE
                 )
             ) |>
@@ -175,11 +175,11 @@ decompose_unequal_representation <- function(data,
                 group_summary |>
                     dplyr::select(
                         "group_label",
-                        "weighted_within_group_disproportionality_contribution"
+                        "weighted_within_category_disproportionality_contribution"
                     ) |>
                     tidyr::pivot_wider(
                         names_from = "group_label",
-                        values_from = "weighted_within_group_disproportionality_contribution",
+                        values_from = "weighted_within_category_disproportionality_contribution",
                         names_prefix = "disproportionality_within_"
                     )
             )
