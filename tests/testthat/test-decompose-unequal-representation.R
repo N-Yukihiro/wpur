@@ -158,6 +158,28 @@ testthat::test_that("group decomposition columns exist when grouping is requeste
     )
 })
 
+testthat::test_that("group decomposition dynamic columns have stable order", {
+    res_party_independent <- call_decompose(
+        fixture_party_vs_independent,
+        alpha = 2,
+        group_decomposition = "party_vs_independent"
+    )
+    res_multicandidate <- call_decompose(
+        fixture_multicandidate_bug_detector,
+        alpha = 2,
+        group_decomposition = "multicandidate_vs_others"
+    )
+
+    testthat::expect_lt(
+        match("disproportionality_within_independent", names(res_party_independent)),
+        match("disproportionality_within_party", names(res_party_independent))
+    )
+    testthat::expect_lt(
+        match("disproportionality_within_multicandidate", names(res_multicandidate)),
+        match("disproportionality_within_other", names(res_multicandidate))
+    )
+})
+
 testthat::test_that("perfect proportionality returns zeros for all base components", {
     for (a in c(0, 1, 2, 10)) {
         res <- call_decompose(fixture_perfect_representation, alpha = a)
