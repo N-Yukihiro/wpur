@@ -22,7 +22,7 @@ Description: Provides tools to implement the unified approach proposed by
 License: MIT + file LICENSE
 Encoding: UTF-8
 Imports:
-    dplyr,
+    dplyr (>= 1.1.0),
     rlang,
     stringr,
     tibble,
