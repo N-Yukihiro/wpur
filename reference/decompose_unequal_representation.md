@@ -41,7 +41,7 @@ decompose_unequal_representation(
 
   Character string selecting optional decomposition of party-level
   disproportionality. One of `"none"`, `"party_vs_independent"`, or
-  `"multicandidate_vs_others"`.
+  `"multicandidate_vs_singlecandidate"`.
 
 - independent_label:
 
