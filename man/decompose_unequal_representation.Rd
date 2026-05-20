@@ -27,7 +27,7 @@ identifying the party, district, votes, and election outcome variables.}
 
 \item{group_decomposition}{Character string selecting optional decomposition
 of party-level disproportionality. One of \code{"none"},
-\code{"party_vs_independent"}, or \code{"multicandidate_vs_others"}.}
+\code{"party_vs_independent"}, or \code{"multicandidate_vs_singlecandidate"}.}
 
 \item{independent_label}{Character scalar used to identify independents in \code{party_var}.
 When \code{group_decomposition = "party_vs_independent"},

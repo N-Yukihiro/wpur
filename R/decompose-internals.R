@@ -32,12 +32,11 @@ prepare_candidate_results <- function(data,
         )
 
     district_status <- candidate_data |>
-        dplyr::group_by(.data$district) |>
         dplyr::summarise(
             any_vote_observed = any(!is.na(.data$votes)),
             any_vote_missing = any(is.na(.data$votes)),
             seats_in_district = sum(.data$elected, na.rm = TRUE),
-            .groups = "drop"
+            .by = dplyr::all_of("district")
         ) |>
         dplyr::mutate(
             district_no_contest = !.data$any_vote_observed
@@ -77,12 +76,11 @@ prepare_candidate_results <- function(data,
                 .data$party_raw
             )
         ) |>
-        dplyr::group_by(.data$district, .data$party) |>
         dplyr::summarise(
             votes = sum(.data$votes, na.rm = TRUE),
             seats = sum(.data$elected, na.rm = TRUE),
             candidate_count = dplyr::n(),
-            .groups = "drop"
+            .by = dplyr::all_of(c("district", "party"))
         )
 
     if (nrow(analysis_data) == 0) {
@@ -97,58 +95,91 @@ prepare_candidate_results <- function(data,
     )
 }
 
-summarise_party_results <- function(analysis_data, total_votes, total_seats, alpha) {
+summarise_axis_results <- function(analysis_data,
+                                   group_col,
+                                   vote_col,
+                                   seat_col,
+                                   total_votes,
+                                   total_seats,
+                                   alpha,
+                                   prefix,
+                                   divergence_name,
+                                   contribution_name) {
+    rename_map <- rlang::set_names(
+        rlang::syms(c(
+            "total_votes_axis",
+            "total_seats_axis",
+            "within_divergence",
+            "vote_share_axis",
+            "seat_share_axis",
+            "alpha_weight_axis",
+            "contribution_axis"
+        )),
+        c(
+            paste0(prefix, "_vote_total"),
+            paste0(prefix, "_seat_total"),
+            divergence_name,
+            paste0(prefix, "_vote_share"),
+            paste0(prefix, "_seat_share"),
+            paste0(prefix, "_alpha_weight"),
+            contribution_name
+        )
+    )
+
     analysis_data |>
-        dplyr::group_by(.data$party) |>
         dplyr::summarise(
-            party_vote_total = sum(.data$votes, na.rm = TRUE),
-            party_seat_total = sum(.data$seats, na.rm = TRUE),
-            district_divergence_within_party = conditional_alpha_divergence(
-                seat = .data$seats,
-                vote = .data$votes,
+            total_votes_axis = sum(.data[[vote_col]], na.rm = TRUE),
+            total_seats_axis = sum(.data[[seat_col]], na.rm = TRUE),
+            within_divergence = conditional_alpha_divergence(
+                seat = .data[[seat_col]],
+                vote = .data[[vote_col]],
                 alpha = alpha
             ),
-            .groups = "drop"
+            .by = dplyr::all_of(group_col)
         ) |>
         dplyr::mutate(
-            party_vote_share = .data$party_vote_total / total_votes,
-            party_seat_share = .data$party_seat_total / total_seats,
-            party_alpha_weight = alpha_weight(
-                seat_share = .data$party_seat_share,
-                vote_share = .data$party_vote_share,
+            vote_share_axis = .data$total_votes_axis / total_votes,
+            seat_share_axis = .data$total_seats_axis / total_seats,
+            alpha_weight_axis = alpha_weight(
+                seat_share = .data$seat_share_axis,
+                vote_share = .data$vote_share_axis,
                 alpha = alpha
             ),
-            intra_party_unequal_representation_contribution =
-                .data$party_alpha_weight *
-                    .data$district_divergence_within_party
-        )
+            contribution_axis =
+                .data$alpha_weight_axis *
+                    .data$within_divergence
+        ) |>
+        dplyr::rename(!!!rename_map)
+}
+
+summarise_party_results <- function(analysis_data, total_votes, total_seats, alpha) {
+    summarise_axis_results(
+        analysis_data = analysis_data,
+        group_col = "party",
+        vote_col = "votes",
+        seat_col = "seats",
+        total_votes = total_votes,
+        total_seats = total_seats,
+        alpha = alpha,
+        prefix = "party",
+        divergence_name = "district_divergence_within_party",
+        contribution_name = "intra_party_unequal_representation_contribution"
+    )
 }
 
 summarise_district_results <- function(analysis_data, total_votes, total_seats, alpha) {
-    analysis_data |>
-        dplyr::group_by(.data$district) |>
-        dplyr::summarise(
-            district_vote_total = sum(.data$votes, na.rm = TRUE),
-            district_seat_total = sum(.data$seats, na.rm = TRUE),
-            party_divergence_within_district = conditional_alpha_divergence(
-                seat = .data$seats,
-                vote = .data$votes,
-                alpha = alpha
-            ),
-            .groups = "drop"
-        ) |>
-        dplyr::mutate(
-            district_vote_share = .data$district_vote_total / total_votes,
-            district_seat_share = .data$district_seat_total / total_seats,
-            district_alpha_weight = alpha_weight(
-                seat_share = .data$district_seat_share,
-                vote_share = .data$district_vote_share,
-                alpha = alpha
-            ),
-            wasted_votes_contribution =
-                .data$district_alpha_weight *
-                    .data$party_divergence_within_district
-        )
+    summarise_axis_results(
+        analysis_data = analysis_data,
+        group_col = "district",
+        vote_col = "votes",
+        seat_col = "seats",
+        total_votes = total_votes,
+        total_seats = total_seats,
+        alpha = alpha,
+        prefix = "district",
+        divergence_name = "party_divergence_within_district",
+        contribution_name = "wasted_votes_contribution"
+    )
 }
 
 summarise_group_results <- function(analysis_data,
@@ -173,17 +204,16 @@ summarise_group_results <- function(analysis_data,
             )
     } else {
         party_group_lookup <- analysis_data |>
-            dplyr::group_by(.data$party) |>
             dplyr::summarise(
                 total_candidate_count = sum(.data$candidate_count, na.rm = TRUE),
-                .groups = "drop"
+                .by = dplyr::all_of("party")
             ) |>
             dplyr::transmute(
                 party = .data$party,
                 group_label = dplyr::if_else(
                     .data$total_candidate_count > 1,
                     "multicandidate",
-                    "other"
+                    "singlecandidate"
                 )
             )
     }
@@ -193,29 +223,18 @@ summarise_group_results <- function(analysis_data,
             party_group_lookup,
             by = "party"
         ) |>
-        dplyr::group_by(.data$group_label) |>
-        dplyr::summarise(
-            group_vote_total = sum(.data$party_vote_total, na.rm = TRUE),
-            group_seat_total = sum(.data$party_seat_total, na.rm = TRUE),
-            within_group_disproportionality = conditional_alpha_divergence(
-                seat = .data$party_seat_total,
-                vote = .data$party_vote_total,
-                alpha = alpha
-            ),
-            .groups = "drop"
+        summarise_axis_results(
+            group_col = "group_label",
+            vote_col = "party_vote_total",
+            seat_col = "party_seat_total",
+            total_votes = total_votes,
+            total_seats = total_seats,
+            alpha = alpha,
+            prefix = "group",
+            divergence_name = "within_group_disproportionality",
+            contribution_name = "weighted_within_category_disproportionality_contribution"
         ) |>
-        dplyr::mutate(
-            group_vote_share = .data$group_vote_total / total_votes,
-            group_seat_share = .data$group_seat_total / total_seats,
-            group_alpha_weight = alpha_weight(
-                seat_share = .data$group_seat_share,
-                vote_share = .data$group_vote_share,
-                alpha = alpha
-            ),
-            weighted_within_group_disproportionality_contribution =
-                .data$group_alpha_weight *
-                    .data$within_group_disproportionality
-        )
+        dplyr::arrange(.data$group_label)
 
     list(
         group_summary = group_summary,
@@ -267,15 +286,15 @@ append_election_info <- function(result,
             )
     }
 
-    if (group_decomposition == "multicandidate_vs_others" && !is.null(party_group_lookup)) {
+    if (group_decomposition == "multicandidate_vs_singlecandidate" && !is.null(party_group_lookup)) {
         result <- result |>
             dplyr::mutate(
                 multicandidate_party_count = sum(
                     party_group_lookup$group_label == "multicandidate",
                     na.rm = TRUE
                 ),
-                other_count = sum(
-                    party_group_lookup$group_label == "other",
+                singlecandidate_party_count = sum(
+                    party_group_lookup$group_label == "singlecandidate",
                     na.rm = TRUE
                 ),
                 .after = party_count
