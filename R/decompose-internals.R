@@ -96,7 +96,7 @@ prepare_candidate_results <- function(data,
 }
 
 summarise_axis_results <- function(analysis_data,
-                                   group_var,
+                                   group_col,
                                    vote_col,
                                    seat_col,
                                    total_votes,
@@ -128,14 +128,14 @@ summarise_axis_results <- function(analysis_data,
 
     analysis_data |>
         dplyr::summarise(
-            total_votes_axis = sum({{ vote_col }}, na.rm = TRUE),
-            total_seats_axis = sum({{ seat_col }}, na.rm = TRUE),
+            total_votes_axis = sum(.data[[vote_col]], na.rm = TRUE),
+            total_seats_axis = sum(.data[[seat_col]], na.rm = TRUE),
             within_divergence = conditional_alpha_divergence(
-                seat = {{ seat_col }},
-                vote = {{ vote_col }},
+                seat = .data[[seat_col]],
+                vote = .data[[vote_col]],
                 alpha = alpha
             ),
-            .by = {{ group_var }}
+            .by = dplyr::all_of(group_col)
         ) |>
         dplyr::mutate(
             vote_share_axis = .data$total_votes_axis / total_votes,
@@ -155,9 +155,9 @@ summarise_axis_results <- function(analysis_data,
 summarise_party_results <- function(analysis_data, total_votes, total_seats, alpha) {
     summarise_axis_results(
         analysis_data = analysis_data,
-        group_var = party,
-        vote_col = votes,
-        seat_col = seats,
+        group_col = "party",
+        vote_col = "votes",
+        seat_col = "seats",
         total_votes = total_votes,
         total_seats = total_seats,
         alpha = alpha,
@@ -170,9 +170,9 @@ summarise_party_results <- function(analysis_data, total_votes, total_seats, alp
 summarise_district_results <- function(analysis_data, total_votes, total_seats, alpha) {
     summarise_axis_results(
         analysis_data = analysis_data,
-        group_var = district,
-        vote_col = votes,
-        seat_col = seats,
+        group_col = "district",
+        vote_col = "votes",
+        seat_col = "seats",
         total_votes = total_votes,
         total_seats = total_seats,
         alpha = alpha,
@@ -224,9 +224,9 @@ summarise_group_results <- function(analysis_data,
             by = "party"
         ) |>
         summarise_axis_results(
-            group_var = group_label,
-            vote_col = party_vote_total,
-            seat_col = party_seat_total,
+            group_col = "group_label",
+            vote_col = "party_vote_total",
+            seat_col = "party_seat_total",
             total_votes = total_votes,
             total_seats = total_seats,
             alpha = alpha,
