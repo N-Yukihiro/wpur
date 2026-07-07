@@ -77,6 +77,8 @@ fixture_all_no_contest <- tibble::tribble(
     "D2", "A", NA, 1
 )
 
+prepare_election_context <- getFromNamespace("prepare_election_context", "wpur")
+
 call_decompose <- function(df,
                            alpha,
                            group_decomposition = "none",
@@ -127,6 +129,23 @@ testthat::test_that("party-level input can be used directly", {
         candidate_res,
         tolerance = 1e-12
     )
+})
+
+testthat::test_that("grouped input is treated the same as ungrouped input", {
+    grouped_res <- call_decompose(
+        dplyr::group_by(fixture_party_vs_independent, district),
+        alpha = 2,
+        group_decomposition = "party_vs_independent",
+        election_info = TRUE
+    )
+    ungrouped_res <- call_decompose(
+        fixture_party_vs_independent,
+        alpha = 2,
+        group_decomposition = "party_vs_independent",
+        election_info = TRUE
+    )
+
+    testthat::expect_equal(grouped_res, ungrouped_res, tolerance = 1e-12)
 })
 
 testthat::test_that("election context exposes prepared candidate and party data", {

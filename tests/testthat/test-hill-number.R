@@ -25,6 +25,16 @@ testthat::test_that("hill_number computes richness for p 0 and Shannon effective
     )
 })
 
+testthat::test_that("hill_number computes the general Hill number for arbitrary p", {
+    shares <- c(0.6, 0.4)
+
+    testthat::expect_equal(
+        hill_number(c(60, 40), p = 3),
+        (sum(shares^3))^(1 / (1 - 3)),
+        tolerance = 1e-12
+    )
+})
+
 testthat::test_that("hill_number ignores zero votes and returns NA for no positive votes", {
     testthat::expect_equal(
         hill_number(c(0, 100), p = 2),

@@ -30,8 +30,9 @@ of party-level disproportionality. One of \code{"none"},
 \code{"party_vs_independent"}, or \code{"multicandidate_vs_singlecandidate"}.}
 
 \item{independent_label}{Character scalar used to identify independents in \code{party_var}.
-When \code{group_decomposition = "party_vs_independent"},
-matching candidates are treated as separate internal parties.}
+Matching candidates are always treated as separate internal parties.
+When \code{group_decomposition = "party_vs_independent"}, the result also
+includes a party-vs-independent split of party-level disproportionality.}
 
 \item{election_info}{Logical scalar indicating whether election-level
 summary columns should be added to the returned tibble.}

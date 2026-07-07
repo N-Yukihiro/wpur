@@ -18,8 +18,9 @@
 #'   of party-level disproportionality. One of `"none"`,
 #'   `"party_vs_independent"`, or `"multicandidate_vs_singlecandidate"`.
 #' @param independent_label Character scalar used to identify independents in `party_var`.
-#'   When `group_decomposition = "party_vs_independent"`,
-#'   matching candidates are treated as separate internal parties.
+#'   Matching candidates are always treated as separate internal parties.
+#'   When `group_decomposition = "party_vs_independent"`, the result also
+#'   includes a party-vs-independent split of party-level disproportionality.
 #' @param election_info Logical scalar indicating whether election-level
 #'   summary columns should be added to the returned tibble.
 #'
@@ -205,7 +206,10 @@ decompose_unequal_representation <- function(data,
 
     if (election_info) {
         election_info_summary <- summarise_election_info(election_context)
-        group_election_info <- summarise_group_election_info(party_group_lookup)
+        group_election_info <- summarise_group_election_info(
+            party_group_lookup = party_group_lookup,
+            group_decomposition = group_decomposition
+        )
 
         if (ncol(group_election_info) > 0) {
             election_info_summary <- election_info_summary |>

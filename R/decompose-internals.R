@@ -19,6 +19,7 @@ normalise_candidate_data <- function(data,
                                      elected_var,
                                      independent_label) {
     data |>
+        dplyr::ungroup() |>
         dplyr::transmute(
             candidate_id = dplyr::row_number(),
             party_label = as.character({{ party_var }}),
@@ -357,29 +358,28 @@ summarise_election_info <- function(election_context) {
     )
 }
 
-summarise_group_election_info <- function(party_group_lookup) {
+summarise_group_election_info <- function(party_group_lookup, group_decomposition) {
     if (is.null(party_group_lookup)) {
         return(tibble::tibble())
     }
 
-    group_labels <- unique(party_group_lookup$group_label)
     count_group <- function(group_label) {
         sum(party_group_lookup$group_label == group_label, na.rm = TRUE)
     }
 
-    if (all(group_labels %in% c("party", "independent"))) {
+    if (group_decomposition == "party_vs_independent") {
         return(tibble::tibble(
             official_party_count = count_group("party"),
             independent_count = count_group("independent")
         ))
     }
 
-    if (all(group_labels %in% c("multicandidate", "singlecandidate"))) {
+    if (group_decomposition == "multicandidate_vs_singlecandidate") {
         return(tibble::tibble(
             multicandidate_party_count = count_group("multicandidate"),
             singlecandidate_party_count = count_group("singlecandidate")
         ))
     }
 
-    tibble::tibble()
+    rlang::abort("Unsupported `group_decomposition` for grouped election info.")
 }
