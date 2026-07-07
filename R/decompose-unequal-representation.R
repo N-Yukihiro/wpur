@@ -18,17 +18,39 @@
 #'   of party-level disproportionality. One of `"none"`,
 #'   `"party_vs_independent"`, or `"multicandidate_vs_singlecandidate"`.
 #' @param independent_label Character scalar used to identify independents in `party_var`.
-#'   When `group_decomposition = "party_vs_independent"`,
-#'   matching candidates are renumbered internally so
-#'   each independent is treated as a separate party.
+#'   Matching candidates are always treated as separate internal parties.
+#'   When `group_decomposition = "party_vs_independent"`, the result also
+#'   includes a party-vs-independent split of party-level disproportionality.
 #' @param election_info Logical scalar indicating whether election-level
-#'   metadata should be added to the returned tibble.
+#'   summary columns should be added to the returned tibble.
 #'
 #' @return A one-row tibble. It always includes `group_decomposition`,
 #'   `whole_picture_of_unequal_representation`, `disproportionality`,
 #'   `intra_party_unequal_representation`, `malapportionment`, and
 #'   `wasted_votes`. Additional columns are added when grouped decomposition
 #'   and/or `election_info = TRUE` are requested.
+#'
+#'   When `election_info = TRUE`, the returned tibble also includes
+#'   election-level summary columns:
+#'
+#'   * `districts_w_contest`, `districts_no_contest`, `party_count`,
+#'     `candidates_with_votes_total`, and `candidates_with_votes_w_contest`
+#'     summarize the numbers of districts, parties, and candidates with votes.
+#'   * `effective_parties_lt`, `effective_parties_molinar`,
+#'     `mean_effective_candidates_lt`, and
+#'     `mean_effective_candidates_molinar` summarize party- and
+#'     district-level competition. The `_lt` columns are Laakso-Taagepera
+#'     effective counts, and the `_molinar` columns are Molinar indices.
+#'   * `total_valid_votes`, `total_seats_w_contest`,
+#'     `total_seats_no_contest`, `seats_per_district`, `votes_per_seat`,
+#'     and `votes_per_district` summarize votes and seats.
+#'
+#'   When `group_decomposition = "party_vs_independent"` and
+#'   `election_info = TRUE`, `official_party_count` and
+#'   `independent_count` are also added. When
+#'   `group_decomposition = "multicandidate_vs_singlecandidate"` and
+#'   `election_info = TRUE`, `multicandidate_party_count` and
+#'   `singlecandidate_party_count` are also added.
 #'
 #' @importFrom rlang .data
 #'
@@ -76,7 +98,7 @@ decompose_unequal_representation <- function(data,
         election_info = election_info
     )
 
-    prepared_results <- prepare_candidate_results(
+    election_context <- prepare_election_context(
         data = data,
         party_var = {{ party_var }},
         district_var = {{ district_var }},
@@ -85,11 +107,9 @@ decompose_unequal_representation <- function(data,
         independent_label = independent_label
     )
 
-    analysis_data <- prepared_results$analysis_data
-    district_status <- prepared_results$district_status
-
-    total_votes <- sum(analysis_data$votes, na.rm = TRUE)
-    total_seats <- sum(analysis_data$seats, na.rm = TRUE)
+    analysis_data <- election_context$analysis_data
+    total_votes <- election_context$total_votes
+    total_seats <- election_context$total_seats
 
     overall_summary <- analysis_data |>
         dplyr::transmute(
@@ -152,8 +172,7 @@ decompose_unequal_representation <- function(data,
             total_votes = total_votes,
             total_seats = total_seats,
             alpha = alpha,
-            group_decomposition = group_decomposition,
-            independent_label = independent_label
+            group_decomposition = group_decomposition
         )
 
         group_summary <- grouped_results$group_summary
@@ -186,15 +205,22 @@ decompose_unequal_representation <- function(data,
     }
 
     if (election_info) {
-        result <- append_election_info(
-            result = result,
-            analysis_data = analysis_data,
-            district_status = district_status,
-            total_votes = total_votes,
-            total_seats = total_seats,
-            group_decomposition = group_decomposition,
-            party_group_lookup = party_group_lookup
+        election_info_summary <- summarise_election_info(election_context)
+        group_election_info <- summarise_group_election_info(
+            party_group_lookup = party_group_lookup,
+            group_decomposition = group_decomposition
         )
+
+        if (ncol(group_election_info) > 0) {
+            election_info_summary <- election_info_summary |>
+                dplyr::bind_cols(group_election_info) |>
+                dplyr::relocate(
+                    dplyr::all_of(names(group_election_info)),
+                    .after = "party_count"
+                )
+        }
+
+        result <- dplyr::bind_cols(election_info_summary, result)
     }
 
     result
