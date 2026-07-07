@@ -31,11 +31,10 @@ of party-level disproportionality. One of \code{"none"},
 
 \item{independent_label}{Character scalar used to identify independents in \code{party_var}.
 When \code{group_decomposition = "party_vs_independent"},
-matching candidates are renumbered internally so
-each independent is treated as a separate party.}
+matching candidates are treated as separate internal parties.}
 
 \item{election_info}{Logical scalar indicating whether election-level
-metadata should be added to the returned tibble.}
+summary columns should be added to the returned tibble.}
 }
 \value{
 A one-row tibble. It always includes \code{group_decomposition},
@@ -43,6 +42,29 @@ A one-row tibble. It always includes \code{group_decomposition},
 \code{intra_party_unequal_representation}, \code{malapportionment}, and
 \code{wasted_votes}. Additional columns are added when grouped decomposition
 and/or \code{election_info = TRUE} are requested.
+
+When \code{election_info = TRUE}, the returned tibble also includes
+election-level summary columns:
+\itemize{
+\item \code{districts_w_contest}, \code{districts_no_contest}, \code{party_count},
+\code{candidates_with_votes_total}, and \code{candidates_with_votes_w_contest}
+summarize the numbers of districts, parties, and candidates with votes.
+\item \code{effective_parties_lt}, \code{effective_parties_molinar},
+\code{mean_effective_candidates_lt}, and
+\code{mean_effective_candidates_molinar} summarize party- and
+district-level competition. The \verb{_lt} columns are Laakso-Taagepera
+effective counts, and the \verb{_molinar} columns are Molinar indices.
+\item \code{total_valid_votes}, \code{total_seats_w_contest},
+\code{total_seats_no_contest}, \code{seats_per_district}, \code{votes_per_seat},
+and \code{votes_per_district} summarize votes and seats.
+}
+
+When \code{group_decomposition = "party_vs_independent"} and
+\code{election_info = TRUE}, \code{official_party_count} and
+\code{independent_count} are also added. When
+\code{group_decomposition = "multicandidate_vs_singlecandidate"} and
+\code{election_info = TRUE}, \code{multicandidate_party_count} and
+\code{singlecandidate_party_count} are also added.
 }
 \description{
 \code{decompose_unequal_representation()} aggregates candidate-level election results

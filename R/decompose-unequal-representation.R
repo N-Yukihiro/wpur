@@ -21,13 +21,35 @@
 #'   When `group_decomposition = "party_vs_independent"`,
 #'   matching candidates are treated as separate internal parties.
 #' @param election_info Logical scalar indicating whether election-level
-#'   metadata should be added to the returned tibble.
+#'   summary columns should be added to the returned tibble.
 #'
 #' @return A one-row tibble. It always includes `group_decomposition`,
 #'   `whole_picture_of_unequal_representation`, `disproportionality`,
 #'   `intra_party_unequal_representation`, `malapportionment`, and
 #'   `wasted_votes`. Additional columns are added when grouped decomposition
 #'   and/or `election_info = TRUE` are requested.
+#'
+#'   When `election_info = TRUE`, the returned tibble also includes
+#'   election-level summary columns:
+#'
+#'   * `districts_w_contest`, `districts_no_contest`, `party_count`,
+#'     `candidates_with_votes_total`, and `candidates_with_votes_w_contest`
+#'     summarize the numbers of districts, parties, and candidates with votes.
+#'   * `effective_parties_lt`, `effective_parties_molinar`,
+#'     `mean_effective_candidates_lt`, and
+#'     `mean_effective_candidates_molinar` summarize party- and
+#'     district-level competition. The `_lt` columns are Laakso-Taagepera
+#'     effective counts, and the `_molinar` columns are Molinar indices.
+#'   * `total_valid_votes`, `total_seats_w_contest`,
+#'     `total_seats_no_contest`, `seats_per_district`, `votes_per_seat`,
+#'     and `votes_per_district` summarize votes and seats.
+#'
+#'   When `group_decomposition = "party_vs_independent"` and
+#'   `election_info = TRUE`, `official_party_count` and
+#'   `independent_count` are also added. When
+#'   `group_decomposition = "multicandidate_vs_singlecandidate"` and
+#'   `election_info = TRUE`, `multicandidate_party_count` and
+#'   `singlecandidate_party_count` are also added.
 #'
 #' @importFrom rlang .data
 #'
