@@ -13,7 +13,7 @@ wasted votes, and intra-party unequal representation."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">wpur</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -35,7 +35,7 @@ wasted votes, and intra-party unequal representation."></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Decompose unequal representation</h1>
-      <small class="dont-index">Source: <a href="https://github.com/N-Yukihiro/wpur/blob/v0.1.1/R/decompose-unequal-representation.R" class="external-link"><code>R/decompose-unequal-representation.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/N-Yukihiro/wpur/blob/main/R/decompose-unequal-representation.R" class="external-link"><code>R/decompose-unequal-representation.R</code></a></small>
       <div class="d-none name"><code>decompose_unequal_representation.Rd</code></div>
     </div>
 
@@ -87,14 +87,14 @@ of party-level disproportionality. One of <code>"none"</code>,
 
 <dt id="arg-independent-label">independent_label<a class="anchor" aria-label="anchor" href="#arg-independent-label"></a></dt>
 <dd><p>Character scalar used to identify independents in <code>party_var</code>.
-When <code>group_decomposition = "party_vs_independent"</code>,
-matching candidates are renumbered internally so
-each independent is treated as a separate party.</p></dd>
+Matching candidates are always treated as separate internal parties.
+When <code>group_decomposition = "party_vs_independent"</code>, the result also
+includes a party-vs-independent split of party-level disproportionality.</p></dd>
 
 
 <dt id="arg-election-info">election_info<a class="anchor" aria-label="anchor" href="#arg-election-info"></a></dt>
 <dd><p>Logical scalar indicating whether election-level
-metadata should be added to the returned tibble.</p></dd>
+summary columns should be added to the returned tibble.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -104,6 +104,24 @@ metadata should be added to the returned tibble.</p></dd>
 <code>intra_party_unequal_representation</code>, <code>malapportionment</code>, and
 <code>wasted_votes</code>. Additional columns are added when grouped decomposition
 and/or <code>election_info = TRUE</code> are requested.</p>
+<p>When <code>election_info = TRUE</code>, the returned tibble also includes
+election-level summary columns:</p><ul><li><p><code>districts_w_contest</code>, <code>districts_no_contest</code>, <code>party_count</code>,
+<code>candidates_with_votes_total</code>, and <code>candidates_with_votes_w_contest</code>
+summarize the numbers of districts, parties, and candidates with votes.</p></li>
+<li><p><code>effective_parties_lt</code>, <code>effective_parties_molinar</code>,
+<code>mean_effective_candidates_lt</code>, and
+<code>mean_effective_candidates_molinar</code> summarize party- and
+district-level competition. The <code>_lt</code> columns are Laakso-Taagepera
+effective counts, and the <code>_molinar</code> columns are Molinar indices.</p></li>
+<li><p><code>total_valid_votes</code>, <code>total_seats_w_contest</code>,
+<code>total_seats_no_contest</code>, <code>seats_per_district</code>, <code>votes_per_seat</code>,
+and <code>votes_per_district</code> summarize votes and seats.</p></li>
+</ul><p>When <code>group_decomposition = "party_vs_independent"</code> and
+<code>election_info = TRUE</code>, <code>official_party_count</code> and
+<code>independent_count</code> are also added. When
+<code>group_decomposition = "multicandidate_vs_singlecandidate"</code> and
+<code>election_info = TRUE</code>, <code>multicandidate_party_count</code> and
+<code>singlecandidate_party_count</code> are also added.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -131,16 +149,17 @@ Within a district, <code>votes_var</code> must be either fully observed or fully
 <span class="r-in"><span>    alpha <span class="op">=</span> <span class="fl">2</span>,</span></span>
 <span class="r-in"><span>    election_info <span class="op">=</span> <span class="cn">TRUE</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 1 × 15</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   districts_w_contest districts_no_contest party_count total_valid_votes</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                 <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>                <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span>                   2                    0           2               200</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 11 more variables: total_seats_w_contest &lt;dbl&gt;,</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   total_seats_no_contest &lt;dbl&gt;, seats_per_district &lt;dbl&gt;,</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   votes_per_seat &lt;dbl&gt;, votes_per_district &lt;dbl&gt;, group_decomposition &lt;chr&gt;,</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   whole_picture_of_unequal_representation &lt;dbl&gt;, disproportionality &lt;dbl&gt;,</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   intra_party_unequal_representation &lt;dbl&gt;, malapportionment &lt;dbl&gt;,</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   wasted_votes &lt;dbl&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 1 × 21</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   districts_w_contest districts_no_contest party_count effective_parties_lt</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                 <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>                <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>                <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span>                   2                    0           2                    2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 17 more variables: effective_parties_molinar &lt;dbl&gt;,</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   candidates_with_votes_total &lt;int&gt;, candidates_with_votes_w_contest &lt;int&gt;,</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   mean_effective_candidates_lt &lt;dbl&gt;,</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   mean_effective_candidates_molinar &lt;dbl&gt;, total_valid_votes &lt;dbl&gt;,</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   total_seats_w_contest &lt;dbl&gt;, total_seats_no_contest &lt;dbl&gt;,</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   seats_per_district &lt;dbl&gt;, votes_per_seat &lt;dbl&gt;, votes_per_district &lt;dbl&gt;,</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   group_decomposition &lt;chr&gt;, whole_picture_of_unequal_representation &lt;dbl&gt;, …</span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

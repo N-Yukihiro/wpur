@@ -45,15 +45,16 @@ decompose_unequal_representation(
 
 - independent_label:
 
-  Character scalar used to identify independents in `party_var`. When
-  `group_decomposition = "party_vs_independent"`, matching candidates
-  are renumbered internally so each independent is treated as a separate
-  party.
+  Character scalar used to identify independents in `party_var`.
+  Matching candidates are always treated as separate internal parties.
+  When `group_decomposition = "party_vs_independent"`, the result also
+  includes a party-vs-independent split of party-level
+  disproportionality.
 
 - election_info:
 
-  Logical scalar indicating whether election-level metadata should be
-  added to the returned tibble.
+  Logical scalar indicating whether election-level summary columns
+  should be added to the returned tibble.
 
 ## Value
 
@@ -62,6 +63,31 @@ A one-row tibble. It always includes `group_decomposition`,
 `intra_party_unequal_representation`, `malapportionment`, and
 `wasted_votes`. Additional columns are added when grouped decomposition
 and/or `election_info = TRUE` are requested.
+
+When `election_info = TRUE`, the returned tibble also includes
+election-level summary columns:
+
+- `districts_w_contest`, `districts_no_contest`, `party_count`,
+  `candidates_with_votes_total`, and `candidates_with_votes_w_contest`
+  summarize the numbers of districts, parties, and candidates with
+  votes.
+
+- `effective_parties_lt`, `effective_parties_molinar`,
+  `mean_effective_candidates_lt`, and
+  `mean_effective_candidates_molinar` summarize party- and
+  district-level competition. The `_lt` columns are Laakso-Taagepera
+  effective counts, and the `_molinar` columns are Molinar indices.
+
+- `total_valid_votes`, `total_seats_w_contest`,
+  `total_seats_no_contest`, `seats_per_district`, `votes_per_seat`, and
+  `votes_per_district` summarize votes and seats.
+
+When `group_decomposition = "party_vs_independent"` and
+`election_info = TRUE`, `official_party_count` and `independent_count`
+are also added. When
+`group_decomposition = "multicandidate_vs_singlecandidate"` and
+`election_info = TRUE`, `multicandidate_party_count` and
+`singlecandidate_party_count` are also added.
 
 ## Details
 
@@ -89,14 +115,15 @@ decompose_unequal_representation(
     alpha = 2,
     election_info = TRUE
 )
-#> # A tibble: 1 × 15
-#>   districts_w_contest districts_no_contest party_count total_valid_votes
-#>                 <int>                <int>       <int>             <dbl>
-#> 1                   2                    0           2               200
-#> # ℹ 11 more variables: total_seats_w_contest <dbl>,
-#> #   total_seats_no_contest <dbl>, seats_per_district <dbl>,
-#> #   votes_per_seat <dbl>, votes_per_district <dbl>, group_decomposition <chr>,
-#> #   whole_picture_of_unequal_representation <dbl>, disproportionality <dbl>,
-#> #   intra_party_unequal_representation <dbl>, malapportionment <dbl>,
-#> #   wasted_votes <dbl>
+#> # A tibble: 1 × 21
+#>   districts_w_contest districts_no_contest party_count effective_parties_lt
+#>                 <int>                <int>       <int>                <dbl>
+#> 1                   2                    0           2                    2
+#> # ℹ 17 more variables: effective_parties_molinar <dbl>,
+#> #   candidates_with_votes_total <int>, candidates_with_votes_w_contest <int>,
+#> #   mean_effective_candidates_lt <dbl>,
+#> #   mean_effective_candidates_molinar <dbl>, total_valid_votes <dbl>,
+#> #   total_seats_w_contest <dbl>, total_seats_no_contest <dbl>,
+#> #   seats_per_district <dbl>, votes_per_seat <dbl>, votes_per_district <dbl>,
+#> #   group_decomposition <chr>, whole_picture_of_unequal_representation <dbl>, …
 ```
