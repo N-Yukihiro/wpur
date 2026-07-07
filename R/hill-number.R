@@ -1,16 +1,24 @@
+positive_vote_shares <- function(votes) {
+    positive_votes <- votes[!is.na(votes) & votes > 0]
+    total_votes <- sum(positive_votes, na.rm = TRUE)
+
+    if (total_votes <= 0) {
+        return(numeric())
+    }
+
+    positive_votes / total_votes
+}
+
 hill_number <- function(votes, p = 2) {
     if (!is.numeric(p) || length(p) != 1L || is.na(p) || !is.finite(p) || p < 0) {
         rlang::abort("`p` must be a single non-negative finite numeric value.")
     }
 
-    positive_votes <- votes[!is.na(votes) & votes > 0]
-    total_votes <- sum(positive_votes, na.rm = TRUE)
+    shares <- positive_vote_shares(votes)
 
-    if (total_votes <= 0) {
+    if (length(shares) == 0) {
         return(NA_real_)
     }
-
-    shares <- positive_votes / total_votes
 
     if (p == 0) {
         return(as.numeric(length(shares)))
@@ -28,15 +36,13 @@ hill_number <- function(votes, p = 2) {
 }
 
 molinar_index <- function(votes) {
-    positive_votes <- votes[!is.na(votes) & votes > 0]
-    total_votes <- sum(positive_votes, na.rm = TRUE)
+    shares <- positive_vote_shares(votes)
 
-    if (total_votes <= 0) {
+    if (length(shares) == 0) {
         return(NA_real_)
     }
 
-    shares <- positive_votes / total_votes
-    lt <- hill_number(positive_votes, p = 2)
+    lt <- hill_number(votes, p = 2)
 
     1 + lt^2 * (sum(shares^2) - max(shares)^2)
 }

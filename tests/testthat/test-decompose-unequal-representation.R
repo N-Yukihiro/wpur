@@ -44,6 +44,12 @@ fixture_party_vs_independent <- tibble::tribble(
     "D2", "無所属", 40, 0
 )
 
+fixture_independent_label_collision <- tibble::tribble(
+    ~district, ~party, ~votes, ~elected,
+    "D1", "無所属", 40, 1,
+    "D1", "無所属1", 60, 1
+)
+
 fixture_multicandidate_bug_detector <- tibble::tribble(
     ~district, ~party, ~votes, ~elected,
     "D1", "A", 30, 1,
@@ -121,6 +127,28 @@ testthat::test_that("party-level input can be used directly", {
         candidate_res,
         tolerance = 1e-12
     )
+})
+
+testthat::test_that("election context exposes prepared candidate and party data", {
+    context <- prepare_election_context(
+        data = fixture_with_no_contest,
+        party_var = party,
+        district_var = district,
+        votes_var = votes,
+        elected_var = elected,
+        independent_label = "無所属"
+    )
+
+    testthat::expect_s3_class(context$candidate_status, "tbl_df")
+    testthat::expect_s3_class(context$contested_candidate_data, "tbl_df")
+    testthat::expect_true("district_no_contest" %in% names(context$candidate_status))
+    testthat::expect_equal(nrow(context$contested_candidate_data), 2)
+    testthat::expect_false(any(context$contested_candidate_data$district == "D2"))
+    testthat::expect_true(all(c(
+        "party_key",
+        "party_label",
+        "is_independent"
+    ) %in% names(context$analysis_data)))
 })
 
 testthat::test_that("group decomposition columns exist when grouping is requested", {
@@ -391,6 +419,25 @@ testthat::test_that("election_info adds party-vs-independent group counts", {
     testthat::expect_equal(
         res$official_party_count + res$independent_count,
         res$party_count
+    )
+})
+
+testthat::test_that("independent party keys do not collide with real party labels", {
+    res <- call_decompose(
+        fixture_independent_label_collision,
+        alpha = 2,
+        group_decomposition = "party_vs_independent",
+        election_info = TRUE
+    )
+    party_shares <- c(0.4, 0.6)
+
+    testthat::expect_equal(res$party_count, 2)
+    testthat::expect_equal(res$official_party_count, 1)
+    testthat::expect_equal(res$independent_count, 1)
+    testthat::expect_equal(
+        res$effective_parties_lt,
+        1 / sum(party_shares^2),
+        tolerance = 1e-12
     )
 })
 

@@ -19,8 +19,7 @@
 #'   `"party_vs_independent"`, or `"multicandidate_vs_singlecandidate"`.
 #' @param independent_label Character scalar used to identify independents in `party_var`.
 #'   When `group_decomposition = "party_vs_independent"`,
-#'   matching candidates are renumbered internally so
-#'   each independent is treated as a separate party.
+#'   matching candidates are treated as separate internal parties.
 #' @param election_info Logical scalar indicating whether election-level
 #'   metadata should be added to the returned tibble.
 #'
@@ -150,8 +149,7 @@ decompose_unequal_representation <- function(data,
             total_votes = total_votes,
             total_seats = total_seats,
             alpha = alpha,
-            group_decomposition = group_decomposition,
-            independent_label = independent_label
+            group_decomposition = group_decomposition
         )
 
         group_summary <- grouped_results$group_summary
