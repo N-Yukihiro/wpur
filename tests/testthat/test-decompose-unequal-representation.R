@@ -276,6 +276,12 @@ testthat::test_that("election_info adds expected metadata columns", {
         "districts_w_contest",
         "districts_no_contest",
         "party_count",
+        "effective_parties_lt",
+        "effective_parties_molinar",
+        "candidates_with_votes_total",
+        "candidates_with_votes_w_contest",
+        "mean_effective_candidates_lt",
+        "mean_effective_candidates_molinar",
         "total_valid_votes",
         "total_seats_w_contest",
         "total_seats_no_contest",
@@ -287,6 +293,27 @@ testthat::test_that("election_info adds expected metadata columns", {
     testthat::expect_equal(res$districts_w_contest, 2)
     testthat::expect_equal(res$districts_no_contest, 0)
     testthat::expect_equal(res$party_count, 2)
+    testthat::expect_equal(res$effective_parties_lt, 2, tolerance = 1e-12)
+    testthat::expect_equal(res$effective_parties_molinar, 2, tolerance = 1e-12)
+    testthat::expect_equal(res$candidates_with_votes_total, 4)
+    testthat::expect_equal(res$candidates_with_votes_w_contest, 4)
+    testthat::expect_equal(
+        res$mean_effective_candidates_lt,
+        1 / (0.6^2 + 0.4^2),
+        tolerance = 1e-12
+    )
+    testthat::expect_equal(
+        res$mean_effective_candidates_molinar,
+        1 + (1 / (0.6^2 + 0.4^2))^2 * 0.4^2,
+        tolerance = 1e-12
+    )
+    testthat::expect_false(any(c(
+        "valid_candidates_total",
+        "valid_candidates_w_contest",
+        "valid_candidates_no_contest",
+        "candidates_with_votes_no_contest",
+        "mean_effective_candidates_hill_q2"
+    ) %in% names(res)))
     testthat::expect_equal(res$total_valid_votes, 200)
     testthat::expect_equal(res$total_seats_w_contest, 4)
     testthat::expect_equal(res$total_seats_no_contest, 0)
@@ -320,6 +347,19 @@ testthat::test_that("no-contest districts are excluded from the decomposition an
     testthat::expect_equal(res_full$districts_w_contest, 1)
     testthat::expect_equal(res_full$districts_no_contest, 1)
     testthat::expect_equal(res_full$party_count, 2)
+    testthat::expect_equal(res_full$candidates_with_votes_total, 2)
+    testthat::expect_equal(res_full$candidates_with_votes_w_contest, 2)
+    testthat::expect_equal(
+        res_full$mean_effective_candidates_lt,
+        1 / (0.6^2 + 0.4^2),
+        tolerance = 1e-12
+    )
+    testthat::expect_equal(
+        res_full$mean_effective_candidates_molinar,
+        1 + (1 / (0.6^2 + 0.4^2))^2 * 0.4^2,
+        tolerance = 1e-12
+    )
+    testthat::expect_false("candidates_with_votes_no_contest" %in% names(res_full))
     testthat::expect_equal(res_full$total_valid_votes, 100)
     testthat::expect_equal(res_full$total_seats_w_contest, 2)
     testthat::expect_equal(res_full$total_seats_no_contest, 1)
@@ -335,6 +375,19 @@ testthat::test_that("election_info adds party-vs-independent group counts", {
 
     testthat::expect_equal(res$official_party_count, 2)
     testthat::expect_equal(res$independent_count, 2)
+    party_shares <- c(0.4, 0.3, 0.1, 0.2)
+    effective_parties_lt <- 1 / sum(party_shares^2)
+
+    testthat::expect_equal(
+        res$effective_parties_lt,
+        effective_parties_lt,
+        tolerance = 1e-12
+    )
+    testthat::expect_equal(
+        res$effective_parties_molinar,
+        1 + effective_parties_lt^2 * (sum(party_shares^2) - max(party_shares)^2),
+        tolerance = 1e-12
+    )
     testthat::expect_equal(
         res$official_party_count + res$independent_count,
         res$party_count

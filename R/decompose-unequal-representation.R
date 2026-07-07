@@ -76,7 +76,7 @@ decompose_unequal_representation <- function(data,
         election_info = election_info
     )
 
-    prepared_results <- prepare_candidate_results(
+    election_context <- prepare_election_context(
         data = data,
         party_var = {{ party_var }},
         district_var = {{ district_var }},
@@ -85,11 +85,9 @@ decompose_unequal_representation <- function(data,
         independent_label = independent_label
     )
 
-    analysis_data <- prepared_results$analysis_data
-    district_status <- prepared_results$district_status
-
-    total_votes <- sum(analysis_data$votes, na.rm = TRUE)
-    total_seats <- sum(analysis_data$seats, na.rm = TRUE)
+    analysis_data <- election_context$analysis_data
+    total_votes <- election_context$total_votes
+    total_seats <- election_context$total_seats
 
     overall_summary <- analysis_data |>
         dplyr::transmute(
@@ -186,15 +184,19 @@ decompose_unequal_representation <- function(data,
     }
 
     if (election_info) {
-        result <- append_election_info(
-            result = result,
-            analysis_data = analysis_data,
-            district_status = district_status,
-            total_votes = total_votes,
-            total_seats = total_seats,
-            group_decomposition = group_decomposition,
-            party_group_lookup = party_group_lookup
-        )
+        election_info_summary <- summarise_election_info(election_context)
+        group_election_info <- summarise_group_election_info(party_group_lookup)
+
+        if (ncol(group_election_info) > 0) {
+            election_info_summary <- election_info_summary |>
+                dplyr::bind_cols(group_election_info) |>
+                dplyr::relocate(
+                    dplyr::all_of(names(group_election_info)),
+                    .after = "party_count"
+                )
+        }
+
+        result <- dplyr::bind_cols(election_info_summary, result)
     }
 
     result

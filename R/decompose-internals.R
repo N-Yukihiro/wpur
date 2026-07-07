@@ -12,12 +12,12 @@ validate_decompose_inputs <- function(alpha, independent_label, election_info) {
     }
 }
 
-prepare_candidate_results <- function(data,
-                                      party_var,
-                                      district_var,
-                                      votes_var,
-                                      elected_var,
-                                      independent_label) {
+prepare_election_context <- function(data,
+                                     party_var,
+                                     district_var,
+                                     votes_var,
+                                     elected_var,
+                                     independent_label) {
     candidate_data <- data |>
         dplyr::transmute(
             party_raw = {{ party_var }},
@@ -90,8 +90,11 @@ prepare_candidate_results <- function(data,
     }
 
     list(
+        candidate_data = candidate_data,
         analysis_data = analysis_data,
-        district_status = district_status
+        district_status = district_status,
+        total_votes = sum(analysis_data$votes, na.rm = TRUE),
+        total_seats = sum(analysis_data$seats, na.rm = TRUE)
     )
 }
 
@@ -242,13 +245,54 @@ summarise_group_results <- function(analysis_data,
     )
 }
 
-append_election_info <- function(result,
-                                 analysis_data,
-                                 district_status,
-                                 total_votes,
-                                 total_seats,
-                                 group_decomposition,
-                                 party_group_lookup = NULL) {
+summarise_candidate_competition <- function(election_context) {
+    candidate_data <- election_context$candidate_data
+    district_status <- election_context$district_status
+
+    contested_districts <- district_status |>
+        dplyr::filter(!.data$district_no_contest) |>
+        dplyr::select("district")
+
+    candidate_data |>
+        dplyr::semi_join(
+            contested_districts,
+            by = "district"
+        ) |>
+        dplyr::summarise(
+            effective_candidates_lt = hill_number(.data$votes, p = 2),
+            effective_candidates_molinar = molinar_index(.data$votes),
+            .by = dplyr::all_of("district")
+        )
+}
+
+summarise_party_competition <- function(election_context) {
+    party_votes <- election_context$analysis_data |>
+        dplyr::summarise(
+            votes = sum(.data$votes, na.rm = TRUE),
+            .by = dplyr::all_of("party")
+        )
+
+    tibble::tibble(
+        effective_parties_lt = hill_number(party_votes$votes, p = 2),
+        effective_parties_molinar = molinar_index(party_votes$votes)
+    )
+}
+
+mean_or_na <- function(x) {
+    if (all(is.na(x))) {
+        return(NA_real_)
+    }
+
+    mean(x, na.rm = TRUE)
+}
+
+summarise_election_info <- function(election_context) {
+    candidate_data <- election_context$candidate_data
+    analysis_data <- election_context$analysis_data
+    district_status <- election_context$district_status
+    total_votes <- election_context$total_votes
+    total_seats <- election_context$total_seats
+
     district_count <- dplyr::n_distinct(analysis_data$district)
     party_count <- dplyr::n_distinct(analysis_data$party)
     districts_no_contest <- sum(district_status$district_no_contest, na.rm = TRUE)
@@ -256,50 +300,66 @@ append_election_info <- function(result,
         dplyr::filter(.data$district_no_contest) |>
         dplyr::summarise(total = sum(.data$seats_in_district, na.rm = TRUE)) |>
         dplyr::pull("total")
-
-    result <- result |>
-        dplyr::mutate(
-            districts_w_contest = district_count,
-            districts_no_contest = districts_no_contest,
-            party_count = party_count,
-            total_valid_votes = total_votes,
-            total_seats_w_contest = total_seats,
-            total_seats_no_contest = total_seats_no_contest,
-            seats_per_district = total_seats / district_count,
-            votes_per_seat = total_votes / total_seats,
-            votes_per_district = total_votes / district_count,
-            .before = 1
+    candidate_status <- candidate_data |>
+        dplyr::left_join(
+            district_status |>
+                dplyr::select("district", "district_no_contest"),
+            by = "district"
         )
+    candidates_with_votes <- candidate_status |>
+        dplyr::filter(!is.na(.data$votes))
+    candidate_competition <- summarise_candidate_competition(election_context)
+    party_competition <- summarise_party_competition(election_context)
 
-    if (group_decomposition == "party_vs_independent" && !is.null(party_group_lookup)) {
-        result <- result |>
-            dplyr::mutate(
-                official_party_count = sum(
-                    party_group_lookup$group_label == "party",
-                    na.rm = TRUE
-                ),
-                independent_count = sum(
-                    party_group_lookup$group_label == "independent",
-                    na.rm = TRUE
-                ),
-                .after = party_count
-            )
+    tibble::tibble(
+        districts_w_contest = district_count,
+        districts_no_contest = districts_no_contest,
+        party_count = party_count,
+        effective_parties_lt = party_competition$effective_parties_lt,
+        effective_parties_molinar = party_competition$effective_parties_molinar,
+        candidates_with_votes_total = nrow(candidates_with_votes),
+        candidates_with_votes_w_contest = sum(
+            !candidates_with_votes$district_no_contest,
+            na.rm = TRUE
+        ),
+        mean_effective_candidates_lt = mean_or_na(
+            candidate_competition$effective_candidates_lt
+        ),
+        mean_effective_candidates_molinar = mean_or_na(
+            candidate_competition$effective_candidates_molinar
+        ),
+        total_valid_votes = total_votes,
+        total_seats_w_contest = total_seats,
+        total_seats_no_contest = total_seats_no_contest,
+        seats_per_district = total_seats / district_count,
+        votes_per_seat = total_votes / total_seats,
+        votes_per_district = total_votes / district_count
+    )
+}
+
+summarise_group_election_info <- function(party_group_lookup) {
+    if (is.null(party_group_lookup)) {
+        return(tibble::tibble())
     }
 
-    if (group_decomposition == "multicandidate_vs_singlecandidate" && !is.null(party_group_lookup)) {
-        result <- result |>
-            dplyr::mutate(
-                multicandidate_party_count = sum(
-                    party_group_lookup$group_label == "multicandidate",
-                    na.rm = TRUE
-                ),
-                singlecandidate_party_count = sum(
-                    party_group_lookup$group_label == "singlecandidate",
-                    na.rm = TRUE
-                ),
-                .after = party_count
-            )
+    group_labels <- unique(party_group_lookup$group_label)
+    count_group <- function(group_label) {
+        sum(party_group_lookup$group_label == group_label, na.rm = TRUE)
     }
 
-    result
+    if (all(group_labels %in% c("party", "independent"))) {
+        return(tibble::tibble(
+            official_party_count = count_group("party"),
+            independent_count = count_group("independent")
+        ))
+    }
+
+    if (all(group_labels %in% c("multicandidate", "singlecandidate"))) {
+        return(tibble::tibble(
+            multicandidate_party_count = count_group("multicandidate"),
+            singlecandidate_party_count = count_group("singlecandidate")
+        ))
+    }
+
+    tibble::tibble()
 }
