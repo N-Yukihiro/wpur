@@ -22,7 +22,8 @@
 #'   When `group_decomposition = "party_vs_independent"`, the result also
 #'   includes a party-vs-independent split of party-level disproportionality.
 #' @param election_info Logical scalar indicating whether election-level
-#'   summary columns should be added to the returned tibble.
+#'   summary columns, including election counts and competition indicators,
+#'   should be added to the returned tibble.
 #'
 #' @return A one-row tibble. It always includes `group_decomposition`,
 #'   `whole_picture_of_unequal_representation`, `disproportionality`,
@@ -36,10 +37,16 @@
 #'   * `districts_w_contest`, `districts_no_contest`, `party_count`,
 #'     `candidates_with_votes_total`, and `candidates_with_votes_w_contest`
 #'     summarize the numbers of districts, parties, and candidates with votes.
-#'   * `effective_parties_lt`, `effective_parties_molinar`,
+#'   * `overall_effective_parties_lt`,
+#'     `overall_effective_parties_molinar`,
+#'     `mean_effective_parties_lt`, `mean_effective_parties_molinar`,
+#'     `overall_effective_candidates_lt`,
+#'     `overall_effective_candidates_molinar`,
 #'     `mean_effective_candidates_lt`, and
 #'     `mean_effective_candidates_molinar` summarize party- and
-#'     district-level competition. The `_lt` columns are Laakso-Taagepera
+#'     candidate-level competition. The `overall_` columns are computed over
+#'     all contested districts, while the `mean_` columns are unweighted means
+#'     of contested-district values. The `_lt` columns are Laakso-Taagepera
 #'     effective counts, and the `_molinar` columns are Molinar indices.
 #'   * `total_valid_votes`, `total_seats_w_contest`,
 #'     `total_seats_no_contest`, `seats_per_district`, `votes_per_seat`,
