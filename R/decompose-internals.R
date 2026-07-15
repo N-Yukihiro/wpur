@@ -283,7 +283,16 @@ summarise_group_results <- function(analysis_data,
     )
 }
 
-summarise_candidate_competition <- function(election_context) {
+summarise_overall_candidate_competition <- function(election_context) {
+    votes <- election_context$contested_candidate_data$votes
+
+    tibble::tibble(
+        overall_effective_candidates_lt = hill_number(votes, p = 2),
+        overall_effective_candidates_molinar = molinar_index(votes)
+    )
+}
+
+summarise_district_candidate_competition <- function(election_context) {
     election_context$contested_candidate_data |>
         dplyr::summarise(
             effective_candidates_lt = hill_number(.data$votes, p = 2),
@@ -292,7 +301,7 @@ summarise_candidate_competition <- function(election_context) {
         )
 }
 
-summarise_party_competition <- function(election_context) {
+summarise_overall_party_competition <- function(election_context) {
     party_votes <- election_context$analysis_data |>
         dplyr::summarise(
             votes = sum(.data$votes, na.rm = TRUE),
@@ -300,9 +309,18 @@ summarise_party_competition <- function(election_context) {
         )
 
     tibble::tibble(
-        effective_parties_lt = hill_number(party_votes$votes, p = 2),
-        effective_parties_molinar = molinar_index(party_votes$votes)
+        overall_effective_parties_lt = hill_number(party_votes$votes, p = 2),
+        overall_effective_parties_molinar = molinar_index(party_votes$votes)
     )
+}
+
+summarise_district_party_competition <- function(election_context) {
+    election_context$analysis_data |>
+        dplyr::summarise(
+            effective_parties_lt = hill_number(.data$votes, p = 2),
+            effective_parties_molinar = molinar_index(.data$votes),
+            .by = dplyr::all_of("district")
+        )
 }
 
 mean_or_na <- function(x) {
@@ -329,25 +347,39 @@ summarise_election_info <- function(election_context) {
         dplyr::pull("total")
     candidates_with_votes <- candidate_status |>
         dplyr::filter(!is.na(.data$votes))
-    candidate_competition <- summarise_candidate_competition(election_context)
-    party_competition <- summarise_party_competition(election_context)
+    overall_candidate_competition <- summarise_overall_candidate_competition(election_context)
+    district_candidate_competition <- summarise_district_candidate_competition(election_context)
+    overall_party_competition <- summarise_overall_party_competition(election_context)
+    district_party_competition <- summarise_district_party_competition(election_context)
 
     tibble::tibble(
         districts_w_contest = district_count,
         districts_no_contest = districts_no_contest,
         party_count = party_count,
-        effective_parties_lt = party_competition$effective_parties_lt,
-        effective_parties_molinar = party_competition$effective_parties_molinar,
+        overall_effective_parties_lt =
+            overall_party_competition$overall_effective_parties_lt,
+        overall_effective_parties_molinar =
+            overall_party_competition$overall_effective_parties_molinar,
+        mean_effective_parties_lt = mean_or_na(
+            district_party_competition$effective_parties_lt
+        ),
+        mean_effective_parties_molinar = mean_or_na(
+            district_party_competition$effective_parties_molinar
+        ),
         candidates_with_votes_total = nrow(candidates_with_votes),
         candidates_with_votes_w_contest = sum(
             !candidates_with_votes$district_no_contest,
             na.rm = TRUE
         ),
+        overall_effective_candidates_lt =
+            overall_candidate_competition$overall_effective_candidates_lt,
+        overall_effective_candidates_molinar =
+            overall_candidate_competition$overall_effective_candidates_molinar,
         mean_effective_candidates_lt = mean_or_na(
-            candidate_competition$effective_candidates_lt
+            district_candidate_competition$effective_candidates_lt
         ),
         mean_effective_candidates_molinar = mean_or_na(
-            candidate_competition$effective_candidates_molinar
+            district_candidate_competition$effective_candidates_molinar
         ),
         total_valid_votes = total_votes,
         total_seats_w_contest = total_seats,
