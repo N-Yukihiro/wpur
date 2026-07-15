@@ -53,8 +53,9 @@ decompose_unequal_representation(
 
 - election_info:
 
-  Logical scalar indicating whether election-level summary columns
-  should be added to the returned tibble.
+  Logical scalar indicating whether election-level summary columns,
+  including election counts and competition indicators, should be added
+  to the returned tibble.
 
 ## Value
 
@@ -72,11 +73,17 @@ election-level summary columns:
   summarize the numbers of districts, parties, and candidates with
   votes.
 
-- `effective_parties_lt`, `effective_parties_molinar`,
+- `overall_effective_parties_lt`, `overall_effective_parties_molinar`,
+  `mean_effective_parties_lt`, `mean_effective_parties_molinar`,
+  `overall_effective_candidates_lt`,
+  `overall_effective_candidates_molinar`,
   `mean_effective_candidates_lt`, and
   `mean_effective_candidates_molinar` summarize party- and
-  district-level competition. The `_lt` columns are Laakso-Taagepera
-  effective counts, and the `_molinar` columns are Molinar indices.
+  candidate-level competition. The `overall_` columns are computed over
+  all contested districts, while the `mean_` columns are unweighted
+  means of contested-district values. The `_lt` columns are
+  Laakso-Taagepera effective counts, and the `_molinar` columns are
+  Molinar indices.
 
 - `total_valid_votes`, `total_seats_w_contest`,
   `total_seats_no_contest`, `seats_per_district`, `votes_per_seat`, and
@@ -115,15 +122,15 @@ decompose_unequal_representation(
     alpha = 2,
     election_info = TRUE
 )
-#> # A tibble: 1 × 21
-#>   districts_w_contest districts_no_contest party_count effective_parties_lt
-#>                 <int>                <int>       <int>                <dbl>
-#> 1                   2                    0           2                    2
-#> # ℹ 17 more variables: effective_parties_molinar <dbl>,
+#> # A tibble: 1 × 25
+#>   districts_w_contest districts_no_contest party_count overall_effective_parti…¹
+#>                 <int>                <int>       <int>                     <dbl>
+#> 1                   2                    0           2                         2
+#> # ℹ abbreviated name: ¹​overall_effective_parties_lt
+#> # ℹ 21 more variables: overall_effective_parties_molinar <dbl>,
+#> #   mean_effective_parties_lt <dbl>, mean_effective_parties_molinar <dbl>,
 #> #   candidates_with_votes_total <int>, candidates_with_votes_w_contest <int>,
-#> #   mean_effective_candidates_lt <dbl>,
-#> #   mean_effective_candidates_molinar <dbl>, total_valid_votes <dbl>,
-#> #   total_seats_w_contest <dbl>, total_seats_no_contest <dbl>,
-#> #   seats_per_district <dbl>, votes_per_seat <dbl>, votes_per_district <dbl>,
-#> #   group_decomposition <chr>, whole_picture_of_unequal_representation <dbl>, …
+#> #   overall_effective_candidates_lt <dbl>,
+#> #   overall_effective_candidates_molinar <dbl>,
+#> #   mean_effective_candidates_lt <dbl>, …
 ```
